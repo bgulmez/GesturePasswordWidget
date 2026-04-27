@@ -3,7 +3,6 @@ import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:gesture_password_widget/model/point_item.dart';
 import 'package:gesture_password_widget/widget/line_painter.dart';
 
@@ -180,6 +179,8 @@ class GesturePasswordWidget extends StatefulWidget with DiagnosticableTreeMixin 
   ///Callback function when the cancelled
   final OnCancel? onCancel;
 
+  final VoidCallback? onPointChange;
+
   /// Space value between PasswordWidget and CancelButton
   final double? cancelButtonSpace;
 
@@ -196,9 +197,7 @@ class GesturePasswordWidget extends StatefulWidget with DiagnosticableTreeMixin 
     properties.add(DiagnosticsProperty<Widget>('errorItem', errorItem));
     properties.add(DiagnosticsProperty<Widget>('hitItem', hitItem));
     properties.add(DiagnosticsProperty<Widget>('arrowItem', arrowItem));
-    properties.add(
-      DiagnosticsProperty<Widget>('errorArrowItem', errorArrowItem),
-    );
+    properties.add(DiagnosticsProperty<Widget>('errorArrowItem', errorArrowItem));
     properties.add(DoubleProperty('arrowXAlign', arrowXAlign));
     properties.add(DoubleProperty('arrowYAlign', arrowYAlign));
     properties.add(IntProperty('singleLineCount', singleLineCount));
@@ -209,16 +208,8 @@ class GesturePasswordWidget extends StatefulWidget with DiagnosticableTreeMixin 
     properties.add(ColorProperty('errorLineColor', errorLineColor));
     properties.add(IterableProperty('answer', answer));
     properties.add(DoubleProperty('lineWidth', lineWidth));
-    properties.add(FlagProperty(
-      'loose',
-      value: loose,
-      ifFalse: 'loose: false',
-      ifTrue: 'loose: true',
-      defaultValue: true,
-    ));
-    properties.add(
-      IntProperty('completeWaitMilliseconds', completeWaitMilliseconds),
-    );
+    properties.add(FlagProperty('loose', value: loose, ifFalse: 'loose: false', ifTrue: 'loose: true', defaultValue: true));
+    properties.add(IntProperty('completeWaitMilliseconds', completeWaitMilliseconds));
     properties.add(IntProperty('hitShowMilliseconds', hitShowMilliseconds));
     properties.add(IntProperty('minLength', minLength));
   }
@@ -249,12 +240,13 @@ class GesturePasswordWidget extends StatefulWidget with DiagnosticableTreeMixin 
     this.minLength,
     this.cancelIdentifySize = 50.0,
     this.cancelButton,
+    this.onPointChange,
     this.cancelButtonSpace = 30,
     this.cancelButtonHeight = 70,
-  })  : assert(singleLineCount > 1, 'singLineCount must not be smaller than 1'),
-        assert(identifySize > 0),
-        assert(size > identifySize),
-        assert(!(errorArrowItem != null && arrowItem == null), 'when arrowItem == null, errorArrowItem will not be shown.');
+  }) : assert(singleLineCount > 1, 'singLineCount must not be smaller than 1'),
+       assert(identifySize > 0),
+       assert(size > identifySize),
+       assert(!(errorArrowItem != null && arrowItem == null), 'when arrowItem == null, errorArrowItem will not be shown.');
 
   @override
   _GesturePasswordWidgetState createState() => _GesturePasswordWidgetState();
@@ -285,26 +277,17 @@ class _GesturePasswordWidgetState extends State<GesturePasswordWidget> {
     defaultNormalItem = Container(
       width: defaultSize,
       height: defaultSize,
-      decoration: BoxDecoration(
-        color: Colors.greenAccent,
-        borderRadius: BorderRadius.circular(50.0),
-      ),
+      decoration: BoxDecoration(color: Colors.greenAccent, borderRadius: BorderRadius.circular(50.0)),
     );
     defaultSelectedItem = Container(
       width: defaultSize,
       height: defaultSize,
-      decoration: BoxDecoration(
-        color: Colors.green,
-        borderRadius: BorderRadius.circular(50.0),
-      ),
+      decoration: BoxDecoration(color: Colors.green, borderRadius: BorderRadius.circular(50.0)),
     );
     defaultErrorItem = Container(
       width: defaultSize,
       height: defaultSize,
-      decoration: BoxDecoration(
-        color: Colors.red,
-        borderRadius: BorderRadius.circular(50.0),
-      ),
+      decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(50.0)),
     );
 
     lineColor = widget.lineColor;
@@ -359,11 +342,9 @@ class _GesturePasswordWidgetState extends State<GesturePasswordWidget> {
                 buildGesturePasswordWidget(),
                 SizedBox(height: widget.cancelButtonSpace),
                 Container(
-                    height: widget.cancelButtonHeight,
-                    child: Visibility(
-                      child: widget.cancelButton!,
-                      visible: cancelButtonVisibility,
-                    )),
+                  height: widget.cancelButtonHeight,
+                  child: Visibility(child: widget.cancelButton!, visible: cancelButtonVisibility),
+                ),
               ],
             )
           : buildGesturePasswordWidget(),
@@ -388,11 +369,7 @@ class _GesturePasswordWidgetState extends State<GesturePasswordWidget> {
                 handPanEnd(null);
               },
               child: CustomPaint(
-                painter: LinePainter(
-                  points: linePoints,
-                  lineColor: lineColor,
-                  lineWidth: widget.lineWidth,
-                ),
+                painter: LinePainter(points: linePoints, lineColor: lineColor, lineWidth: widget.lineWidth),
                 willChange: true,
                 size: Size(widget.size, widget.size),
               ),
@@ -451,13 +428,7 @@ class _GesturePasswordWidgetState extends State<GesturePasswordWidget> {
                     alignment: AlignmentDirectional.center,
                     children: [
                       child!,
-                      Align(
-                        alignment: Alignment(
-                          widget.arrowXAlign,
-                          widget.arrowYAlign,
-                        ),
-                        child: arrowItem,
-                      ),
+                      Align(alignment: Alignment(widget.arrowXAlign, widget.arrowYAlign), child: arrowItem),
                     ],
                   ),
                 ),
@@ -470,7 +441,7 @@ class _GesturePasswordWidgetState extends State<GesturePasswordWidget> {
     Point<double> curPoint = Point(details.localPosition.dx, details.localPosition.dy);
     final point = calculateHintPoint(curPoint);
     if (point != null) {
-      if (!linePoints.contains(Point(point.x, point.y))) {
+      if (result.isEmpty || result.last != point.index) {
         addPointToResult(point.index);
         setState(() {
           point.isSelected = true;
@@ -492,7 +463,7 @@ class _GesturePasswordWidgetState extends State<GesturePasswordWidget> {
     Point<double> curPoint = Point(details.localPosition.dx, details.localPosition.dy);
     final hitPoint = calculateHintPoint(curPoint);
     if (hitPoint != null) {
-      if (!linePoints.contains(Point(hitPoint.x, hitPoint.y))) {
+      if (result.isEmpty || result.last != hitPoint.index) {
         final drawPoint = Point(hitPoint.x, hitPoint.y);
         //宽松策略下，若三点共线则自动将中间的点设置为选中状态。
         if (widget.loose && linePoints.isNotEmpty) {
@@ -502,14 +473,8 @@ class _GesturePasswordWidgetState extends State<GesturePasswordWidget> {
         //处理箭头的角度展示
         if (widget.arrowItem != null) {
           for (int i = 0; i < result.length - 1; i++) {
-            final p1 = math.Point(
-              points[result[i]!].x,
-              points[result[i]!].y,
-            );
-            final p2 = math.Point(
-              points[result[i + 1]!].x,
-              points[result[i + 1]!].y,
-            );
+            final p1 = math.Point(points[result[i]!].x, points[result[i]!].y);
+            final p2 = math.Point(points[result[i + 1]!].x, points[result[i + 1]!].y);
 
             points[result[i]!].angle = calculateAngle(p1, p2);
           }
@@ -517,15 +482,13 @@ class _GesturePasswordWidgetState extends State<GesturePasswordWidget> {
 
         if (result.isNotEmpty) {
           int length = result.length;
-          final p1 = Point(
-            points[result[length - 1]!].x,
-            points[result[length - 1]!].y,
-          );
+          final p1 = Point(points[result[length - 1]!].x, points[result[length - 1]!].y);
 
           double angle = calculateAngle(p1, math.Point(hitPoint.x, hitPoint.y));
           points[result[length - 1]!].angle = angle;
         }
         addPointToResult(hitPoint.index);
+        widget.onPointChange?.call();
         setState(() {
           linePoints.remove(lastPoint);
           hitPoint.isSelected = true;
@@ -537,10 +500,7 @@ class _GesturePasswordWidgetState extends State<GesturePasswordWidget> {
       if (linePoints.isNotEmpty) {
         if (widget.arrowItem != null) {
           int length = result.length;
-          final p1 = Point(
-            points[result[length - 1]!].x,
-            points[result[length - 1]!].y,
-          );
+          final p1 = Point(points[result[length - 1]!].x, points[result[length - 1]!].y);
 
           double angle = calculateAngle(p1, curPoint);
           points[result[length - 1]!].angle = angle;
@@ -589,9 +549,7 @@ class _GesturePasswordWidgetState extends State<GesturePasswordWidget> {
       setState(() {
         ignoring = true;
       });
-      await Future.delayed(Duration(
-        milliseconds: widget.completeWaitMilliseconds,
-      ));
+      await Future.delayed(Duration(milliseconds: widget.completeWaitMilliseconds));
       ignoring = false;
       lineColor = widget.lineColor;
 
@@ -618,9 +576,6 @@ class _GesturePasswordWidgetState extends State<GesturePasswordWidget> {
     for (int i = 0; i < points.length; i++) {
       final p = Point(points[i].x, points[i].y);
       if (p.distanceTo(curPoint) + 0.5 < widget.identifySize * 0.5) {
-        if (points[i].isSelected) {
-          return null;
-        }
         return points[i];
       }
     }
@@ -656,7 +611,7 @@ class _GesturePasswordWidgetState extends State<GesturePasswordWidget> {
   void handleLooseCase(PointItem pre, PointItem next) {
     List<int?> midItems = [];
     points.forEach((item) {
-      if (item != pre && item != next && item.isSelected == false) {
+      if (item != pre && item != next) {
         final itemDrawPoint = Point<double>(item.x, item.y);
         final preDrawPoint = Point<double>(pre.x, pre.y);
         final nextDrawPoint = Point<double>(next.x, next.y);
@@ -667,10 +622,7 @@ class _GesturePasswordWidgetState extends State<GesturePasswordWidget> {
         double area = p * (p - a) * (p - b) * (p - c);
 
         double halfDistance = c * 0.5;
-        Point<double> mid = Point(
-          (pre.x + next.x) * 0.5,
-          (pre.y + next.y) * 0.5,
-        );
+        Point<double> mid = Point((pre.x + next.x) * 0.5, (pre.y + next.y) * 0.5);
 
         if (area - 0.5 <= 0 && itemDrawPoint.distanceTo(mid) < halfDistance) {
           item.isSelected = true;
