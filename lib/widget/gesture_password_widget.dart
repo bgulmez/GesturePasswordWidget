@@ -6,16 +6,16 @@ import 'package:flutter/material.dart';
 import 'package:gesture_password_widget/model/point_item.dart';
 import 'package:gesture_password_widget/widget/line_painter.dart';
 
-/// 当点被选中时的回调函数
+/// Callback function when a point is selected
 typedef OnHitPoint = void Function();
 
-/// 手势滑动结束时的回调函数
-/// [result] 已经选择的所有点的结果集
+/// Callback function when gesture sliding ends
+/// [result] The result set of all selected points
 typedef OnComplete = void Function(List<int?> result);
 
 typedef OnCancel = void Function();
 
-/// 一个支持高度自定义、满足绝大部分日常需求的手势密码绘制widget
+/// A highly customizable gesture password widget that meets most daily needs
 ///
 /// [简体中文](https://github.com/LuodiJackShen/GesturePasswordWidget/blob/master/README-CN.md)
 /// [English](https://github.com/LuodiJackShen/GesturePasswordWidget/blob/master/README.md) <br>
@@ -86,88 +86,89 @@ typedef OnCancel = void Function();
 /// ```
 ///
 class GesturePasswordWidget extends StatefulWidget with DiagnosticableTreeMixin {
-  /// GesturePasswordWidget 的 width 和 height.
+  /// The width and height of GesturePasswordWidget.
   final double size;
 
-  ///用来判断点是否被选中的区域大小，值越大识别越精准.
+  /// The area size used to determine whether a point is selected. The larger the value, the more accurate the recognition.
   final double identifySize;
 
-  ///正常情况下展示的widget
+  /// The widget displayed in the normal state.
   final Widget? normalItem;
 
-  ///选中情况下展示的widget
+  /// The widget displayed in the selected state.
   final Widget? selectedItem;
 
-  /// 错误情况下展示的widget，只有设置了[minLength]或[answer]时才会生效，
-  /// 1）当[minLength]不为null时，如果选择的点的数量小于minLength，则展示[errorItem]，
-  /// 比如设置了 minLength = 4，但是选择的点的结果集为 [0,1,3]，共选择了3个点，小于4；
-  /// 2）当[answer]不为null时，如果选择的点的结果集和[answer]不相等，则展示[errorItem]，
-  /// 比如 answer = [0,1,2,4,7]，但是选择的点的结果集为[0,1,2,5,8]，和answer不相等;
-  /// 另外，[errorItem]的展示时长由[completeWaitMilliseconds]控制。
+  /// The widget displayed in the error state. Only takes effect when [minLength] or [answer] is set.
+  /// 1) When [minLength] is not null, if the number of selected points is less than minLength, [errorItem] is displayed.
+  /// For example, if minLength = 4, but the result set is [0,1,3] with only 3 points selected, which is less than 4.
+  /// 2) When [answer] is not null, if the result set does not match [answer], [errorItem] is displayed.
+  /// For example, if answer = [0,1,2,4,7], but the result set is [0,1,2,5,8], which does not match answer.
+  /// The display duration of [errorItem] is controlled by [completeWaitMilliseconds].
   final Widget? errorItem;
 
-  /// 当这个点被选中时要展示的widget，其展示时长由[hitShowMilliseconds]控制，达到展示时长
-  /// 后继续展示[selectedItem]。
+  /// The widget displayed when this point is selected. Its display duration is controlled by [hitShowMilliseconds].
+  /// After the display duration, it continues to show [selectedItem].
   final Widget? hitItem;
 
-  ///正常情况下显示的箭头控件。
-  ///跟随手势旋转时，x轴正方向为0度，所以如果你使用了箭头，确保箭头指向x轴正方向。
+  /// The arrow widget displayed in the normal state.
+  /// When rotating with the gesture, the positive x-axis direction is 0 degrees, so if you use an arrow, make sure it points in the positive x-axis direction.
   final Widget? arrowItem;
 
-  ///错误情况下显示的箭头控件，如果设置了[errorArrowItem],则必须设置[arrowItem],
-  ///否则[errorArrowItem]不会展示。
-  ///跟随手势旋转时，x轴正方向为0度，所以如果你使用了箭头，确保箭头指向x轴正方向。
+  /// The arrow widget displayed in the error state. If [errorArrowItem] is set, [arrowItem] must also be set,
+  /// otherwise [errorArrowItem] will not be displayed.
+  /// When rotating with the gesture, the positive x-axis direction is 0 degrees, so if you use an arrow, make sure it points in the positive x-axis direction.
   final Widget? errorArrowItem;
 
-  ///[arrowItem]和[errorArrowItem]在x轴上的偏移，原点在[normalItem]的中心。
-  ///当 -1 < [arrowXAlign] < 1 时，[arrowItem]和[errorArrowItem]在[normalItem]范围内进行绘制；
-  ///当[arrowXAlign] > 1 或者[arrowXAlign] < -1时，在[normalItem]范围外进行绘制；
+  /// The x-axis offset of [arrowItem] and [errorArrowItem], with the origin at the center of [normalItem].
+  /// When -1 < [arrowXAlign] < 1, [arrowItem] and [errorArrowItem] are drawn within the [normalItem] bounds.
+  /// When [arrowXAlign] > 1 or [arrowXAlign] < -1, they are drawn outside the [normalItem] bounds.
   final double arrowXAlign;
 
-  ///[arrowItem]和[errorArrowItem]在y轴上的偏移，原点在[normalItem]的中心。
-  ///当 -1 < [arrowYAlign] < 1 时，[arrowItem]和[errorArrowItem]在[normalItem]范围内进行绘制；
-  ///当[arrowYAlign] > 1 或者[arrowYAlign] < -1时，在[normalItem]范围外进行绘制；
+  /// The y-axis offset of [arrowItem] and [errorArrowItem], with the origin at the center of [normalItem].
+  /// When -1 < [arrowYAlign] < 1, [arrowItem] and [errorArrowItem] are drawn within the [normalItem] bounds.
+  /// When [arrowYAlign] > 1 or [arrowYAlign] < -1, they are drawn outside the [normalItem] bounds.
   final double arrowYAlign;
 
-  ///单行个数，总个数等于 singleLineCount * singleLineCount.
+  /// Number of points per row. The total count equals singleLineCount * singleLineCount.
   final int singleLineCount;
 
-  ///GesturePasswordWidget的背景色，默认为 [Theme.of].[scaffoldBackgroundColor]
+  /// Background color of GesturePasswordWidget. Defaults to [Theme.of].[scaffoldBackgroundColor].
   final Color? color;
 
-  ///当点被选中时的回调函数
+  /// Callback function when a point is selected.
   final OnHitPoint? onHitPoint;
 
-  ///手势滑动结束时的回调函数
+  /// Callback function when gesture sliding ends.
   final OnComplete? onComplete;
 
-  ///线的颜色
+  /// The color of the line.
   final Color lineColor;
 
-  ///错误场景下线的颜色，见[errorItem]
+  /// The color of the line in error scenarios. See [errorItem].
   final Color errorLineColor;
 
-  ///线的宽度
+  /// The width of the line.
   final double lineWidth;
 
-  /// 是否采用宽松策略，默认为true。
-  /// 考虑这种情况：第一个点选中了 index = 0 的点，第二个点选中了 index = 6的点，
-  /// 此时index = 0,index = 3,index = 6这三个点在一条直线上，
-  /// 如果loose为true，输出为[0,3,6],
-  /// 如果loose为false，输出为[0,6].
+  /// Whether to use the loose strategy. Defaults to true.
+  /// Consider this case: the first selected point has index = 0, and the second has index = 6.
+  /// At this time, points with index = 0, index = 3, and index = 6 are on the same line.
+  /// If loose is true, the output is [0, 3, 6].
+  /// If loose is false, the output is [0, 6].
   final bool loose;
 
-  ///正确的结果，demo: [0, 1, 2, 4, 7]
+  /// The correct answer. Example: [0, 1, 2, 4, 7]
   final List<int>? answer;
 
-  ///最后选择的所有点及绘制的直线在屏幕上展示的时间，时间结束后，清除所有点，恢复到初始状态，
-  ///时间结束之前 GesturePasswordWidget 不再接受任何手势事件。
+  /// The duration that all selected points and drawn lines are displayed on screen after completion.
+  /// After the time expires, all points are cleared and reset to the initial state.
+  /// Before the time expires, GesturePasswordWidget will not accept any gesture events.
   final int completeWaitMilliseconds;
 
-  ///见[hitItem]
+  /// See [hitItem].
   final int hitShowMilliseconds;
 
-  ///如果设置了此值，则长度不够时显示[errorItem]和[errorLineColor].
+  /// If this value is set, [errorItem] and [errorLineColor] are shown when the selected length is insufficient.
   final int? minLength;
 
   ///Used to cancel the drawn pattern
@@ -256,6 +257,7 @@ class _GesturePasswordWidgetState extends State<GesturePasswordWidget> {
   late Point origin;
   late int totalCount;
   Point<double>? lastPoint;
+  Point<double>? lastDragPoint;
   Widget? normalItem;
   Widget? defaultNormalItem;
   Widget? selectedItem;
@@ -379,7 +381,7 @@ class _GesturePasswordWidgetState extends State<GesturePasswordWidget> {
     );
   }
 
-  //计算每个点的位置
+  // Calculate the position of each point
   void calculatePointPosition() {
     double initX = widget.identifySize * 0.5;
     double initY = widget.identifySize * 0.5;
@@ -392,7 +394,7 @@ class _GesturePasswordWidgetState extends State<GesturePasswordWidget> {
     }
   }
 
-  //创建每个点的widget
+  // Create the widget for each point
   List<Widget> createPointsWidget() {
     return points.map<Widget>((p) {
       double reference = 1 - (widget.identifySize / widget.size);
@@ -465,12 +467,12 @@ class _GesturePasswordWidgetState extends State<GesturePasswordWidget> {
     if (hitPoint != null) {
       if (result.isEmpty || result.last != hitPoint.index) {
         final drawPoint = Point(hitPoint.x, hitPoint.y);
-        //宽松策略下，若三点共线则自动将中间的点设置为选中状态。
+        // Under the loose strategy, if three points are collinear, automatically set the middle point as selected.
         if (widget.loose && linePoints.isNotEmpty) {
           handleLooseCase(points[result.last!], hitPoint);
         }
 
-        //处理箭头的角度展示
+        // Handle arrow angle display
         if (widget.arrowItem != null) {
           for (int i = 0; i < result.length - 1; i++) {
             final p1 = math.Point(points[result[i]!].x, points[result[i]!].y);
@@ -513,6 +515,7 @@ class _GesturePasswordWidgetState extends State<GesturePasswordWidget> {
         lastPoint = curPoint;
       }
     }
+    lastDragPoint = curPoint;
     checkCancelPoint(curPoint);
   }
 
@@ -521,8 +524,9 @@ class _GesturePasswordWidgetState extends State<GesturePasswordWidget> {
       return;
     }
 
-    if (cancelPoint.isSelected) {
-      widget.onCancel?.call();
+    /// When user release finger below the gesture area, cancel process.
+    final isBelowGestureArea = lastDragPoint != null && lastDragPoint!.y > widget.size;
+    if (isBelowGestureArea) {
     } else {
       widget.onComplete?.call(result);
       if (!mounted) {
@@ -539,7 +543,7 @@ class _GesturePasswordWidgetState extends State<GesturePasswordWidget> {
         }
       }
 
-      //清除最后一个点的角度
+      // Clear the angle of the last point
       points[result.last!].angle = double.infinity;
 
       if (!mounted) {
@@ -568,10 +572,11 @@ class _GesturePasswordWidgetState extends State<GesturePasswordWidget> {
       result.clear();
       cancelPoint.isSelected = false;
       cancelButtonVisibility = false;
+      lastDragPoint = null;
     });
   }
 
-  //计算命中的点
+  // Calculate the hit point
   PointItem? calculateHintPoint(Point<double> curPoint) {
     for (int i = 0; i < points.length; i++) {
       final p = Point(points[i].x, points[i].y);
@@ -606,8 +611,8 @@ class _GesturePasswordWidgetState extends State<GesturePasswordWidget> {
     }
   }
 
-  //根据海伦公式计算三角形面积，面积为0时视为三点共线。如果这个点还在共线的中间，
-  //则将其设置为选中状态，并将其添加到result中。
+  // Calculate the triangle area using Heron's formula. When the area is 0, the three points are considered collinear.
+  // If this point is in the middle of the collinear points, set it as selected and add it to the result.
   void handleLooseCase(PointItem pre, PointItem next) {
     List<int?> midItems = [];
     points.forEach((item) {
@@ -642,8 +647,8 @@ class _GesturePasswordWidgetState extends State<GesturePasswordWidget> {
     });
   }
 
-  //计算两点之间连线和 x 轴的夹角,返回弧度
+  // Calculate the angle between the line connecting two points and the x-axis, returns radians
   double calculateAngle(Point p1, Point p2) {
-    return math.atan2((p2.y - p1.y), (p2.x - p1.x)); //弧度
+    return math.atan2((p2.y - p1.y), (p2.x - p1.x)); // radians
   }
 }
