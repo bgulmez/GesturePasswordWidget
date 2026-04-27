@@ -443,7 +443,7 @@ class _GesturePasswordWidgetState extends State<GesturePasswordWidget> {
     Point<double> curPoint = Point(details.localPosition.dx, details.localPosition.dy);
     final point = calculateHintPoint(curPoint);
     if (point != null) {
-      if (!linePoints.contains(Point(point.x, point.y))) {
+      if (result.isEmpty || result.last != point.index) {
         addPointToResult(point.index);
         setState(() {
           point.isSelected = true;
@@ -465,7 +465,7 @@ class _GesturePasswordWidgetState extends State<GesturePasswordWidget> {
     Point<double> curPoint = Point(details.localPosition.dx, details.localPosition.dy);
     final hitPoint = calculateHintPoint(curPoint);
     if (hitPoint != null) {
-      if (!linePoints.contains(Point(hitPoint.x, hitPoint.y))) {
+      if (result.isEmpty || result.last != hitPoint.index) {
         final drawPoint = Point(hitPoint.x, hitPoint.y);
         // Under the loose strategy, if three points are collinear, automatically set the middle point as selected.
         if (widget.loose && linePoints.isNotEmpty) {
@@ -581,9 +581,6 @@ class _GesturePasswordWidgetState extends State<GesturePasswordWidget> {
     for (int i = 0; i < points.length; i++) {
       final p = Point(points[i].x, points[i].y);
       if (p.distanceTo(curPoint) + 0.5 < widget.identifySize * 0.5) {
-        if (points[i].isSelected) {
-          return null;
-        }
         return points[i];
       }
     }
@@ -619,7 +616,7 @@ class _GesturePasswordWidgetState extends State<GesturePasswordWidget> {
   void handleLooseCase(PointItem pre, PointItem next) {
     List<int?> midItems = [];
     points.forEach((item) {
-      if (item != pre && item != next && item.isSelected == false) {
+      if (item != pre && item != next) {
         final itemDrawPoint = Point<double>(item.x, item.y);
         final preDrawPoint = Point<double>(pre.x, pre.y);
         final nextDrawPoint = Point<double>(next.x, next.y);
